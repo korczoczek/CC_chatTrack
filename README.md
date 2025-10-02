@@ -12,7 +12,7 @@ Attach the Chat Box and (optionally) Watchdog timer directly to the computer
 ## Installation
 Download the script file
 ```
-wget 
+wget https://raw.githubusercontent.com/korczoczek/CC_chatTrack/refs/heads/main/track.lua
 ```
 
 ## Customization
