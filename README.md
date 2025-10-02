@@ -22,7 +22,7 @@ track - table of phrases to be check for (lowercase only)
 ignore - usernames of players/entities to be ignored
 name - name of Chatbox
 brackets - brackets around chatbox's username
-color - color of brackets
+color - color of brackets in the [MOTD code format](https://www.digminecraft.com/lists/color_list_pc.php)
 ```
 
 
