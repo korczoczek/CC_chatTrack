@@ -124,6 +124,7 @@ end
 local function robustSendMessage(s)
     local ret,err=chat.sendMessage(s,name,brackets,color)
     while err do
+        os.sleep(0.05)
         ret,err=chat.sendMessage(s,name,brackets,color)
     end
 end
