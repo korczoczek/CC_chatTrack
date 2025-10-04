@@ -14,6 +14,19 @@ local name = "ChatTrack"
 local brackets = "[]"
 local color = "&5"
 
+local restartText="Tracking has been restarted"
+local stopText="Tracking is stopping temporarily, we're sorry for the inconvenience"
+local rankingText="Current Top Chat ranking:"
+local trackingInitText={
+    "Added ",
+    " to tracker"
+}
+local trackingIncreaseText={
+    "Increased ",
+    "'s standing in the ranking"
+}
+
+
 local function loadDatabase(location)
     local handle,err,data
     if fs.exists(location) then
@@ -126,7 +139,7 @@ if WDT then
     WDT.setEnabled(true)
 end
 
-robustSendMessage("Tracking has been restarted")
+robustSendMessage(restartText)
 while true do
     local timer=os.startTimer(240)
     local event, username, message, uuid = os.pullEvent()
@@ -137,7 +150,7 @@ while true do
     end
     if event == "chat" then
         if message == name then
-            robustSendMessage("Current Top Chat ranking:")
+            robustSendMessage(rankingText)
             local top=getTop(data,5)
             for i=1,5 do
                 if players[top[i]] then
@@ -149,11 +162,11 @@ while true do
         if not isOnList(username,blacklist) and isTracked(message) then
             if data[uuid] == nil then
                 data[uuid] = 1
-                robustSendMessage("Added "..username.." to tracker")
+                robustSendMessage(trackingInitText[1]..username..trackingInitText[2])
                 print("Registered "..uuid.." as "..username)
             else
                 data[uuid] = data[uuid] + 1
-                robustSendMessage("Increased "..username.."'s standing in the ranking")
+                robustSendMessage(trackingIncreaseText[1]..username..trackingIncreaseText[2])
                 print("Increased score of "..username.." to "..data[uuid])
             end
             players[uuid]=username
@@ -162,7 +175,7 @@ while true do
         end
     end
     if event == "key" then
-        robustSendMessage("Tracking is stopping temporarily, we're sorry for the inconvenience")
+        robustSendMessage(stopText)
         break
     end
 end
