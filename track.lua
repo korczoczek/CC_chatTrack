@@ -31,7 +31,6 @@ local toastInitText = "You have been added to the list"
 local toastIncreaseText = "Your score has been increased"
 
 
-
 local function loadDatabase(location)
     local handle,err,data
     if fs.exists(location) then
@@ -127,18 +126,18 @@ local function getTop(keyList,amount)
 end
 
 local function robustSendMessage(s)
-    local ret,err=chat.sendMessage(s,name,brackets,color)
+    local ret,err=chat.sendMessage(s,color..name,brackets,color)
     while err do
         os.sleep(0.1)
-        ret,err=chat.sendMessage(s,name,brackets,color)
+        ret,err=chat.sendMessage(s,color..name,brackets,color)
     end
 end
 
 local function robustSendToast(s,username)
-    local ret,err=chat.sendToastToPlayer(s,name,username)
+    local ret,err=chat.sendToastToPlayer(s,"Alert",username,color..name,brackets,color)
     while err do
         os.sleep(0.1)
-        ret,err=chat.sendToastToPlayer(s,name,username)
+        ret,err=chat.sendToastToPlayer(s,"Alert",username,color..name,brackets,color)
     end
 end
 
