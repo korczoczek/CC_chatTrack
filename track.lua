@@ -108,32 +108,40 @@ local function getTop(keyList,amount)
     return topName
 end
 
+local function robustSendMessage(s)
+    local ret,err=chat.sendMessage(s,name,brackets,color)
+    while err do
+        ret,err=chat.sendMessage(s,name,brackets,color)
+    end
+end
+
 --Tom's perif WatchDog Timer support
 local hasWDT=false
 local WDT=peripheral.find("tm_wdt")
 if WDT then
     hasWDT=true
     WDT.setEnabled(false)
-    WDT.setTimeout(1200)
+    os.sleep(1)
+    WDT.setTimeout(6000)
     WDT.setEnabled(true)
 end
 
-chat.sendMessage("Tracking has been restarted",name,brackets,color)
+robustSendMessage("Tracking has been restarted")
 while true do
-    local timer=os.startTimer(30)
+    local timer=os.startTimer(240)
     local event, username, message, uuid = os.pullEvent()
     os.cancelTimer(timer)
     if hasWDT then
         WDT.setEnabled(false)
+        WDT.setEnabled(true)
     end
     if event == "chat" then
         if message == name then
-            chat.sendMessage("Current Top Chat ranking:",name,brackets,color)
+            robustSendMessage("Current Top Chat ranking:")
             local top=getTop(data,5)
             for i=1,5 do
                 if players[top[i]] then
-                    sleep(0.1)
-                    chat.sendMessage(tostring(i)..". "..tostring(players[top[i]]),name,brackets,color)
+                    robustSendMessage(tostring(i)..". "..tostring(players[top[i]]))
                 end
             end
         end
@@ -141,11 +149,11 @@ while true do
         if not isOnList(username,blacklist) and isTracked(message) then
             if data[uuid] == nil then
                 data[uuid] = 1
-                chat.sendMessage("Added "..username.." to tracker",name,brackets,color)
+                robustSendMessage("Added "..username.." to tracker")
                 print("Registered "..uuid.." as "..username)
             else
                 data[uuid] = data[uuid] + 1
-                chat.sendMessage("Increased "..username.."'s standing in the ranking",name,brackets,color)
+                robustSendMessage("Increased "..username.."'s standing in the ranking")
                 print("Increased score of "..username.." to "..data[uuid])
             end
             players[uuid]=username
@@ -154,10 +162,7 @@ while true do
         end
     end
     if event == "key" then
-        chat.sendMessage("Tracking is stopping temporarily, we're sorry for the inconvenience",name,brackets,color)
-        exit()
-    end
-    if hasWDT then
-        WDT.setEnabled(true)
+        robustSendMessage("Tracking is stopping temporarily, we're sorry for the inconvenience")
+        break
     end
 end
