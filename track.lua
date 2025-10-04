@@ -26,6 +26,11 @@ local trackingIncreaseText={
     "'s standing in the ranking"
 }
 
+local toast=false
+local toastInitText = "You have been added to the list"
+local toastIncreaseText = "Your score has been increased"
+
+
 
 local function loadDatabase(location)
     local handle,err,data
@@ -124,8 +129,16 @@ end
 local function robustSendMessage(s)
     local ret,err=chat.sendMessage(s,name,brackets,color)
     while err do
-        os.sleep(0.05)
+        os.sleep(0.1)
         ret,err=chat.sendMessage(s,name,brackets,color)
+    end
+end
+
+local function robustSendToast(s,username)
+    local ret,err=chat.sendToastToPlayer(s,name,username)
+    while err do
+        os.sleep(0.1)
+        ret,err=chat.sendToastToPlayer(s,name,username)
     end
 end
 
@@ -163,11 +176,19 @@ while true do
         if not isOnList(username,blacklist) and isTracked(message) then
             if data[uuid] == nil then
                 data[uuid] = 1
-                robustSendMessage(trackingInitText[1]..username..trackingInitText[2])
+                if toast then
+                    robustSendToast(toastInitText,username)
+                else
+                    robustSendMessage(trackingInitText[1]..username..trackingInitText[2])
+                end
                 print("Registered "..uuid.." as "..username)
             else
                 data[uuid] = data[uuid] + 1
-                robustSendMessage(trackingIncreaseText[1]..username..trackingIncreaseText[2])
+                if toast then
+                    robustSendToast(toastIncreaseText,username)
+                else
+                    robustSendMessage(trackingIncreaseText[1]..username..trackingIncreaseText[2])
+                end
                 print("Increased score of "..username.." to "..data[uuid])
             end
             players[uuid]=username
