@@ -176,6 +176,9 @@ while true do
     end
     if event == "key" then
         robustSendMessage(stopText)
+        if hasWDT then
+            WDT.setEnabled(false)
+        end
         break
     end
 end
