@@ -163,13 +163,14 @@ while true do
     end
     if event == "chat" then
         if message == name then
-            robustSendMessage(rankingText)
+            local text=rankingText
             local top=getTop(data,5)
             for i=1,5 do
                 if players[top[i]] then
-                    robustSendMessage(tostring(i)..". "..tostring(players[top[i]]))
+                    text=text..(tostring(i)..". "..tostring(players[top[i]]))
                 end
             end
+            robustSendMessage(text)
         end
         message=string.lower(message)
         if not isOnList(username,blacklist) and isTracked(message) then
