@@ -167,7 +167,7 @@ while true do
             local top=getTop(data,5)
             for i=1,5 do
                 if players[top[i]] then
-                    text=text..(tostring(i)..". "..tostring(players[top[i]]))
+                    text=text..("\n"..tostring(i)..". "..tostring(players[top[i]]))
                 end
             end
             robustSendMessage(text)
