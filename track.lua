@@ -4,15 +4,20 @@ local track = {
 }
 -- list of players/entites to be excluded from tracking, as usernames
 local blacklist = {
-    "server"
+    "server",
+    "Server"
+}
+--users allowed to run "advanced" commands
+local adv_users = {
+
 }
 
 local chat = peripheral.find("chat_box")
-local database = "database/score"
-local playerbase = "database/player"
-local name = "ChatTrack"
-local brackets = "[]"
-local color = "&5"
+local database = "database/score" --this is where scores will be kept
+local playerbase = "database/player" --uuid to playername conversion table
+local name = "ChatTrack" --name of the tracker, will show up in chat and toasts
+local brackets = "[]" --brackets around said name
+local color = "&5" --color, in chat color format
 
 local restartText="Tracking has been restarted"
 local stopText="Tracking is stopping temporarily, we're sorry for the inconvenience"
@@ -30,6 +35,9 @@ local toast=false
 local toastInitText = "You have been added to the list"
 local toastIncreaseText = "Your score has been increased"
 
+
+local chatDelay=0.1
+local retryLimit=50
 
 local function loadDatabase(location)
     local handle,err,data
@@ -61,6 +69,22 @@ end
 local data=loadDatabase(database)
 local players=loadDatabase(playerbase)
 print("Started database")
+
+
+local function mysplit(inputstr, sep)
+    if sep == nil then
+      sep = "%s"
+    end
+    local t = {}
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+      table.insert(t, str)
+    end
+    return t
+  end
+
+local function startsWith(str, start)
+    return str:sub(1, #start) == start
+ end
 
 local function isTracked(msg)
     for i = 1, #track do
@@ -122,24 +146,50 @@ local function getTop(keyList,amount)
             min=topVal[amount]
         end
     end
-    return topName
+    return topName,topVal
 end
 
 local function robustSendMessage(s)
+    local count = 0
     local ret,err=chat.sendMessage(s,color..name,brackets,color)
     while err do
-        os.sleep(0.1)
+        os.sleep(chatDelay)
         ret,err=chat.sendMessage(s,color..name,brackets,color)
+        count = count + 1
+        if count>retryLimit then
+            error(tostring(ret).." "..tostring(err),1)
+        end
     end
 end
 
 local function robustSendToast(s,username)
+    local count = 0
     local ret,err=chat.sendToastToPlayer(s,"Alert",username,color..name,brackets,color)
     while err do
-        os.sleep(0.1)
+        os.sleep(chatDelay)
         ret,err=chat.sendToastToPlayer(s,"Alert",username,color..name,brackets,color)
+        count = count + 1
+        if count>retryLimit then
+            error(tostring(ret).." "..tostring(err),1)
+        end
     end
 end
+
+local function announceTop(keyList,amount,showScore)
+    local text=rankingText
+    local top,val=getTop(keyList,amount)
+    for i=1,amount do
+        if players[top[i]] then
+            text=text..("\n"..tostring(i)..". "..tostring(players[top[i]]))
+            if showScore then
+                text = text.." - "..val[i]
+            end
+        end
+    end
+    robustSendMessage(text)
+    print(text)
+end
+
 
 --Tom's perif WatchDog Timer support
 local hasWDT=false
@@ -147,34 +197,44 @@ local WDT=peripheral.find("tm_wdt")
 if WDT then
     hasWDT=true
     WDT.setEnabled(false)
-    os.sleep(1)
+    while WDT.isEnabled() do
+        os.sleep(0.1)
+    end
     WDT.setTimeout(6000)
     WDT.setEnabled(true)
+    print("WatchDog timer setup done")
 end
 
 robustSendMessage(restartText)
+print(restartText)
 while true do
     local timer=os.startTimer(240)
     local event, username, message, uuid = os.pullEvent()
     os.cancelTimer(timer)
-    if hasWDT then
+    if hasWDT then --reset watchdog everytime a message is sent in chat, or 4 minutes pass
         WDT.setEnabled(false)
         WDT.setEnabled(true)
     end
     if event == "chat" then
-        if message == name then
-            local text=rankingText
-            local top=getTop(data,5)
-            for i=1,5 do
-                if players[top[i]] then
-                    text=text..("\n"..tostring(i)..". "..tostring(players[top[i]]))
+        --check if user is allowed to send advanced commands
+        if isOnList(username,adv_users) then
+            --adv command 1: Show more ranking and with scores included
+            if startsWith(message,name.." ") then
+                local command=mysplit(message)
+                local num=tonumber(tostring(command[2]))
+                if num ~= nil then
+                    announceTop(data,num,true)
                 end
             end
-            robustSendMessage(text)
         end
+        --display ranking of top 5
+        if message == name then
+            announceTop(data,5)
+        end
+        --convert to lowercase for easier checking
         message=string.lower(message)
         if not isOnList(username,blacklist) and isTracked(message) then
-            if data[uuid] == nil then
+            if data[uuid] == nil then --player is not in database
                 data[uuid] = 1
                 if toast then
                     robustSendToast(toastInitText,username)
@@ -182,7 +242,7 @@ while true do
                     robustSendMessage(trackingInitText[1]..username..trackingInitText[2])
                 end
                 print("Registered "..uuid.." as "..username)
-            else
+            else --player is in database already
                 data[uuid] = data[uuid] + 1
                 if toast then
                     robustSendToast(toastIncreaseText,username)
