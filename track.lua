@@ -151,28 +151,32 @@ end
 
 local function robustSendMessage(s)
     local count = 0
-    local ret,err=chat.sendMessage(s,color..name,brackets,color)
-    while err do
-        os.sleep(chatDelay)
+    local ret,err
+    repeat
+        if count>0 then
+            os.sleep(chatDelay)
+        end
         ret,err=chat.sendMessage(s,color..name,brackets,color)
         count = count + 1
         if count>retryLimit then
             error(tostring(ret).." "..tostring(err),1)
         end
-    end
+    until ret
 end
 
 local function robustSendToast(s,username)
     local count = 0
-    local ret,err=chat.sendToastToPlayer(s,"Alert",username,color..name,brackets,color)
-    while err do
-        os.sleep(chatDelay)
+    local ret,err
+    repeat
+        if count>0 then
+            os.sleep(chatDelay)
+        end
         ret,err=chat.sendToastToPlayer(s,"Alert",username,color..name,brackets,color)
         count = count + 1
         if count>retryLimit then
             error(tostring(ret).." "..tostring(err),1)
         end
-    end
+    until ret
 end
 
 local function announceTop(keyList,amount,showScore)
