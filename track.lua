@@ -38,6 +38,7 @@ local toastIncreaseText = "Your score has been increased"
 
 local chatDelay=0.1
 local retryLimit=50
+local chatLenLimit=256
 
 
 if chat == nil then
@@ -86,6 +87,21 @@ local function mysplit(inputstr, sep)
     end
     return t
   end
+
+local function equalSplit(str,len)
+    if len==nil then
+        error("No Length Provided")
+    end
+    local t={}
+    local pointerA,pointerB=1,1
+    while pointerB<=#str do
+        pointerB=pointerB+len
+        table.insert(t,str:sub(pointerA,pointerB))
+        pointerB=pointerB+1
+        pointerA=pointerB
+    end
+    return t
+end
 
 local function startsWith(str, start)
     return str:sub(1, #start) == start
@@ -154,34 +170,69 @@ local function getTop(keyList,amount)
     return topName,topVal
 end
 
+local function robustSplit(str,limit)
+    local init = mysplit(str," ")
+    local chunks = {}
+    --split words too big into multiple chunks
+    for i,s in ipairs(init) do
+        if #s > limit then
+            local split=equalSplit(s,limit)
+            for j,val in ipairs(split) do
+                table.insert(chunks,val)
+            end
+        else
+            table.insert(chunks,s)
+        end
+    end
+    --assemble sentences
+    local sencences={""}
+    local chunksLen=#chunks
+    local index=1
+    for i=1,chunksLen do
+        if #sencences[index]+1+#chunks[i]<limit then
+            sencences[index]=sencences[index].." "..chunks[i]
+        else
+            index = index + 1
+            sencences[index]=chunks[i]
+        end
+    end
+    return sencences
+end
+
 local function robustSendMessage(s)
-    local count = 0
-    local ret,err
-    repeat
-        if count>0 then
-            os.sleep(chatDelay)
-        end
-        ret,err=chat.sendMessage(s,color..name,brackets,color)
-        count = count + 1
-        if count>retryLimit then
-            error(tostring(ret).." "..tostring(err),1)
-        end
-    until ret
+    local chunks = robustSplit(s,chatLenLimit)
+    for i,chunk in ipairs(chunks) do
+        local count = 0
+        local ret,err
+        repeat
+            if count>0 then
+                os.sleep(chatDelay)
+            end
+            ret,err=chat.sendMessage(chunk,color..name,brackets,color)
+            count = count + 1
+            if count>retryLimit then
+                error(tostring(ret).." "..tostring(err),1)
+            end
+        until ret
+    end
 end
 
 local function robustSendToast(s,username)
-    local count = 0
-    local ret,err
-    repeat
-        if count>0 then
-            os.sleep(chatDelay)
-        end
-        ret,err=chat.sendToastToPlayer(s,"Alert",username,color..name,brackets,color)
-        count = count + 1
-        if count>retryLimit then
-            error(tostring(ret).." "..tostring(err),1)
-        end
-    until ret
+    local chunks = robustSplit(s,chatLenLimit)
+    for i,chunk in ipairs(chunks) do
+        local count = 0
+        local ret,err
+        repeat
+            if count>0 then
+                os.sleep(chatDelay)
+            end
+            ret,err=chat.sendToastToPlayer(chunk,"Alert",username,color..name,brackets,color)
+            count = count + 1
+            if count>retryLimit then
+                error(tostring(ret).." "..tostring(err),1)
+            end
+        until ret
+    end
 end
 
 local function announceTop(keyList,amount,showScore)
