@@ -39,6 +39,11 @@ local toastIncreaseText = "Your score has been increased"
 local chatDelay=0.1
 local retryLimit=50
 
+
+if chat == nil then
+    error("No chat box connected")
+end
+
 local function loadDatabase(location)
     local handle,err,data
     if fs.exists(location) then
